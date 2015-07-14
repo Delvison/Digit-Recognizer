@@ -5,9 +5,6 @@ import theano.tensor as T
 import numpy as np
 import cPickle as cp
 
-'''
-
-'''
 def initialize():
     # initialize the W weight matrix to 0's
     W = theano.shared(
