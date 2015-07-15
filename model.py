@@ -5,7 +5,14 @@ import theano.tensor as T
 import numpy as np
 import cPickle as cp
 
-def initialize():
+def initialize(finetune_lr=0.1, pretraining_epochs=100,
+             pretrain_lr=0.01, k=1, training_epochs=1000,
+             dataset='mnist.pkl.gz', batch_size=10):
+    # get training data
+    training_set = get_training_set()
+
+    # TODO: get test set
+
     # initialize the W weight matrix to 0's
     W = theano.shared(
         value= np.zeros(
@@ -26,20 +33,45 @@ def initialize():
         borrow = True
     )
 
-    # calculate softmax
-    matrix_given_x = T.nnet.softmax(T.dot(T.dmatrix('x'), W) + b)
 
-    # cost function for maximum likelihood with L2 regularization
+    # calculate softmax
+    p_y_given_x = T.nnet.softmax(T.dot(x, W) + b)
+
+    # how to compute prediction as class whose probability is maximal
     y_prediction = T.argmax( matrix_given_x, axis=1 )
 
     # gather parameters for gradient calculation
     parameters = [W, b]
 
-    # calculate gradient tensor.grad(inputs, output_grads)
-    gradients = T.grad(cost, )
+    # vector for cost calculation
+    y = T.ivector('y')
 
-    # sgd as grads
-    (f_grad_shared, f_update) = sgd()
+    # calculate cost using negative log likelihood
+    cost = -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+
+    # compute the gradient of cost with respect to theta = (W,b)
+    grad_W = T.grad(cost=cost, wrt=W)
+    grad_b = T.grad(cost=cost, wrt=b)
+
+    # specify how to update the params of the model as a list of
+    # (variable, update expression)
+    updates = [(W, W - learning_rate * grad_W),
+                (b, b - learning_rate * grad_b)]
+
+    index = T.lscalar('index')
+    batch_size = 600
+
+    train_model = theano.function(
+        inputs=[index],
+        outputs=cost,
+        updates=updates,
+        givens={
+            x: train_set_x[index * batch_size: (index + 1) * batch_size],
+            y: train_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+
+    print "...training model"
 
 
 
